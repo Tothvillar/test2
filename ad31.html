@@ -19,22 +19,39 @@
 window.dapi = (function () {
   var listeners = { viewableChange: [], audioVolumeChange: [] };
   function notify(kind, val) { listeners[kind].slice(0).forEach(function (cb) { try { cb(val) } catch (x) {} }); }
+  /* unity-fix: MRAID ready gate pattern - Unity validator requires mraid.getState() + addEventListener("ready");
+     wiring retries until the post-load mraid.js injection lands, then forwards lifecycle to dapi listeners */
   function wireMraid() {
-    if (!(window.mraid && window.mraid.addEventListener)) return false;
-    try {
-      mraid.addEventListener("viewableChange", function (v) { notify("viewableChange", { isViewable: !!v }) });
-      mraid.addEventListener("audioVolumeChange", function (vol) { notify("audioVolumeChange", vol > 0) });
-      return true;
-    } catch (x) { return false }
+    if (!(window.mraid && window.mraid.getState)) return false;
+    var wire = function () {
+      try {
+        mraid.addEventListener("viewableChange", function (v) { notify("viewableChange", { isViewable: !!v }) });
+        mraid.addEventListener("audioVolumeChange", function (vol) { notify("audioVolumeChange", vol > 0) });
+      } catch (x) {}
+    };
+    if ("loading" === mraid.getState()) {
+      mraid.addEventListener("ready", function () {
+        wire();
+        try { notify("viewableChange", { isViewable: !!mraid.isViewable() }) } catch (x) {}
+      });
+    } else {
+      wire();
+    }
+    return true;
   }
   var mraidWired = false;
+  function ensureWired() {
+    if (mraidWired) return;
+    mraidWired = wireMraid();
+    if (!mraidWired) setTimeout(ensureWired, 300); /* mraid.js injects on window load - retry until then */
+  }
   return {
     isReady: function () { return true },
     isViewable: function () { try { return window.mraid ? mraid.isViewable() : true } catch (x) { return true } },
     addEventListener: function (ev, cb) {
       if (!(ev in listeners)) return;
       listeners[ev].push(cb);
-      if (!mraidWired) mraidWired = wireMraid();
+      ensureWired();
     },
     removeEventListener: function (ev, cb) {
       var a = listeners[ev] || [], i = a.indexOf(cb);
