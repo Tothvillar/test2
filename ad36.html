@@ -203,7 +203,6 @@ window.MW_CONFIG = {
   if (!inflate) { console.error("[unity-fix] no inflater available"); return }
   inflate(b2u(PAYLOAD)).then(function (bytes) {
     var code = new TextDecoder("utf-8").decode(bytes);
-    /* ---- MRAID robust gate ---- */
     var started = false, paused = false;
     function run() {
       if (started) return;
