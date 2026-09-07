@@ -1,4 +1,5 @@
 <!DOCTYPE html><html><head>
+<script src="mraid.js"></script>
 <head>
 <script>
 // unity-fix: local mv_utils shim - replaces Mobvista rayjump SDK utilities without any network calls
@@ -35,11 +36,13 @@ window.mv_utils = window.mv_utils || {};
 // unity-fix: store click - InstallFullGame calls window.install (container-injected, dead standalone).
 // /android/i forward detection (iPadOS UA is Macintosh); mraid.open with plaintext links.
 window.install = function (url) {
-  var u = url || (/android/i.test(navigator.userAgent || "")
-    ? "https://play.google.com/store/apps/details?id=com.worm.car.rush.gp"
-    : "https://apps.apple.com/app/worm-car/id1670102445");
-  if (window.mraid && typeof mraid.open === "function") { mraid.open(u); }
-  else { window.open(u, "_blank"); } /* desktop browser fallback */
+  if (!url) {
+    url = /android/i.test(navigator.userAgent || "")
+      ? "https://play.google.com/store/apps/details?id=com.worm.car.rush.gp"
+      : "https://apps.apple.com/app/worm-car/id1670102445";
+  }
+  if (window.mraid) { mraid.open(url); return; } /* Unity Ads CTA: mraid.open(url) */
+  window.open(url, "_blank"); /* desktop browser fallback */
 };
 </script>
 <script>
@@ -10527,11 +10530,13 @@ window.RES.settings={"config":{"default":{"hintTimeout":{"type":"float","title":
   }
   window.__mraidGate(kickStart);
   window.install = function (url) {
-    var u = url || (/android/i.test(navigator.userAgent || "")
-      ? "https://play.google.com/store/apps/details?id=com.worm.car.rush.gp"
-      : "https://apps.apple.com/app/worm-car/id1670102445");
-    if (window.mraid && typeof mraid.open === "function") { mraid.open(u); }
-    else { window.open(u, "_blank"); }
+    if (!url) {
+      url = /android/i.test(navigator.userAgent || "")
+        ? "https://play.google.com/store/apps/details?id=com.worm.car.rush.gp"
+        : "https://apps.apple.com/app/worm-car/id1670102445";
+    }
+    if (window.mraid) { mraid.open(url); return; } /* Unity Ads CTA: mraid.open(url) */
+    window.open(url, "_blank"); /* desktop browser fallback */
   };
   var visible = true, pending = [];
   if (window.requestAnimationFrame) {
